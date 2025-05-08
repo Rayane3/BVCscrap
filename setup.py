@@ -6,7 +6,7 @@ with open('README.md') as readme_file:
 
 setup_args = dict(
     name='BVCscrap',
-    version='0.0.1',
+    version='0.0.2',
     description='Python library to scrape financial data from Casablanca Stock Exchange(Bourse des Valeurs de Casablanca)',
     long_description_content_type="text/markdown",
     long_description=README,
