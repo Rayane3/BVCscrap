@@ -12,8 +12,8 @@ setup_args = dict(
     long_description=README,
     license='MIT',
     packages=find_packages(),
-    author='ANDAM Amine',
-    author_email='andamamine83@gmail.com',
+    author='ANDAM Amine and edithor BOUAYAD Rayane',
+    author_email='bouayadr39@gmail.com',
     keywords=["Web scrapping","financial data"],
     url='https://github.com/AmineAndam04/BVCscrap',
 
