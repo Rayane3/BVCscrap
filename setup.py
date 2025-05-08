@@ -11,7 +11,7 @@ setup_args = dict(
     long_description_content_type="text/markdown",
     long_description=README,
     license='MIT',
-    packages=find_packages(),
+    packages=find_packages(include=["BVCscrap", "BVCscrap.*"]),
     author='ANDAM Amine and edithor BOUAYAD Rayane',
     author_email='bouayadr39@gmail.com',
     keywords=["Web scrapping","financial data"],
