@@ -1,4 +1,4 @@
-import requests 
+import cloudscraper
 from bs4 import BeautifulSoup
 import pandas as pd
 import json
@@ -36,7 +36,8 @@ def loadata(name, start=None,end=None,decode="utf-8"):
 		else:
 			link = "https://medias24.com/content/api?method=getIndexHistory&ISIN=msi20&periode=10y&format=json"
 
-	request_data = requests.get(link, headers={'User-Agent': 'Mozilla/5.0'})
+	scraper = cloudscraper.create_scraper()
+	request_data = scraper.get(link)
 
 	if request_data.status_code != 200 or not request_data.text.strip().startswith('{'):
 		raise ValueError(f"Bad API response for {name}: {request_data.status_code}, body={request_data.text[:150]}")
