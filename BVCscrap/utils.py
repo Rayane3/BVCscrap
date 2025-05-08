@@ -18,8 +18,12 @@ def get_valeur(name):
     name_value=notation_value()
     return name_value[name]
 
-def get_data(soup,decode):
-    table= json.loads(soup.text.encode().decode(decode))
+#def get_data(soup,decode):
+#    table = json.loads(soup.text.encode().decode(decode))
+
+# jai aussi remplace largument soup par json_text
+def get_data(json_text, decode):
+    table = json.loads(json_text.encode().decode(decode))
     row_data=pd.DataFrame(table["result"])
     row_data.columns=["Date","Value","Min","Max","Variation","Volume"]
     date=row_data['Date']

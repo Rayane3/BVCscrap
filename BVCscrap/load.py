@@ -37,12 +37,18 @@ def loadata(name, start=None,end=None,decode="utf-8"):
 		else:
 			link="https://medias24.com/content/api?method=getIndexHistory&ISIN=msi20&periode=10y&format=json"
 		request_data = requests.get(link,headers={'User-Agent': 'Mozilla/5.0'})
-		soup = BeautifulSoup(request_data.text,features="lxml")
-		data_all=get_index(soup,decode)
+		#soup = BeautifulSoup(request_data.text,features="lxml")
+		#data_all=get_index(soup,decode)
+		# jai remplace les 2 lignes au dessus par les 3 ligne suivante
+		if request_data.status_code != 200 or not request_data.text.strip().startswith('{'):
+			raise ValueError(f"Bad API response for {name}: {request_data.status_code}, body={request_data.text[:150]}")
+
+		data = get_data(request_data.text, decode)
+
 		if start and end :
-			data=produce_data(data_all,start,end)
+			data=produce_data(data,start,end)
 		else: 
-			data=data_all
+			data=data
 	return data   
 
 def loadmany(*args,start=None,end=None,feature="Value",decode="utf-8"):
