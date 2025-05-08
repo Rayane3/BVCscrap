@@ -20,36 +20,34 @@ def loadata(name, start=None,end=None,decode="utf-8"):
 	       ================================================================================= 
 	               | pandas.DataFrame (4 columns)     |Value	Min	Max	Variation	Volume
 	"""
-	code=get_code(name)
-	if name != "MASI" and name != "MSI20":
-		if start and end:
-			link="https://medias24.com/content/api?method=getPriceHistory&ISIN="+ code+"&format=json&from="+start +"&to=" + end
-		else :
-			start='2011-09-18'
-			end= str(datetime.datetime.today().date())    
-			link="https://medias24.com/content/api?method=getPriceHistory&ISIN="+ code+"&format=json&from="+start +"&to=" + end 
-		request_data = requests.get(link,headers={'User-Agent': 'Mozilla/5.0'})
-		soup = BeautifulSoup(request_data.text,features="lxml")
-		data=get_data(soup,decode)
+	code = get_code(name)
+	if not code and name not in ["MASI", "MSI20"]:
+		raise ValueError(f"Unknown name or missing ISIN for: {name}")
+
+	if name not in ["MASI", "MSI20"]:
+		if not start or not end:
+			start = '2011-09-18'
+			end = str(datetime.datetime.today().date())
+
+		link = f"https://medias24.com/content/api?method=getPriceHistory&ISIN={code}&format=json&from={start}&to={end}"
 	else:
-		if name=="MASI" :
-			link="https://medias24.com/content/api?method=getMasiHistory&periode=10y&format=json"
+		if name == "MASI":
+			link = "https://medias24.com/content/api?method=getMasiHistory&periode=10y&format=json"
 		else:
-			link="https://medias24.com/content/api?method=getIndexHistory&ISIN=msi20&periode=10y&format=json"
-		request_data = requests.get(link,headers={'User-Agent': 'Mozilla/5.0'})
-		#soup = BeautifulSoup(request_data.text,features="lxml")
-		#data_all=get_index(soup,decode)
-		# jai remplace les 2 lignes au dessus par les 3 ligne suivante
-		if request_data.status_code != 200 or not request_data.text.strip().startswith('{'):
-			raise ValueError(f"Bad API response for {name}: {request_data.status_code}, body={request_data.text[:150]}")
+			link = "https://medias24.com/content/api?method=getIndexHistory&ISIN=msi20&periode=10y&format=json"
 
-		data = get_data(request_data.text, decode)
+	request_data = requests.get(link, headers={'User-Agent': 'Mozilla/5.0'})
 
-		if start and end :
-			data=produce_data(data,start,end)
-		else: 
-			data=data
-	return data   
+	if request_data.status_code != 200 or not request_data.text.strip().startswith('{'):
+		raise ValueError(f"Bad API response for {name}: {request_data.status_code}, body={request_data.text[:150]}")
+
+	data = get_data(request_data.text, decode)
+
+	if name in ["MASI", "MSI20"] and start and end:
+		data = produce_data(data, start, end)
+
+	return data
+
 
 def loadmany(*args,start=None,end=None,feature="Value",decode="utf-8"):
 	"""
