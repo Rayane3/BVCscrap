@@ -96,7 +96,7 @@ def loadata_patch(name, start=None, end=None, decode="utf-8"):
     # 5) Conversion de la colonne Date
     if pd.api.types.is_numeric_dtype(df["Date"]):
         # MASI renvoie un timestamp en ms
-        df["Date"] = pd.to_datetime(df["Date"], unit="ms", errors="coerce")
+        df["Date"] = pd.to_datetime(df["Date"], unit="s", errors="coerce")
     else:
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
 
