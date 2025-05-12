@@ -53,44 +53,54 @@ def loadata(name, start=None,end=None,decode="utf-8"):
 
 def loadata_patch(name, start=None, end=None, decode="utf-8"):
     """
-    Même signature que bvc.loadata(), mais on adapte le rename des colonnes
-    selon que l'index soit un indice ou un indice d'un index.
+    Patch de bvc.loadata() qui gère le cas MASI/MSI20 avec dates en epoch ms.
     """
     code = get_code(name)
-    # Construction de l'URL
+    # 1) Construire l'URL
     if name not in ["MASI", "MSI20"]:
         if not (start and end):
             start = '2011-09-18'
             end   = str(datetime.date.today())
-        link = (f"https://medias24.com/content/api?"
-                f"method=getPriceHistory&ISIN={code}"
-                f"&format=json&from={start}&to={end}")
+        link = (
+            f"https://medias24.com/content/api?"
+            f"method=getPriceHistory&ISIN={code}"
+            f"&format=json&from={start}&to={end}"
+        )
     else:
         if name == "MASI":
-            link = ("https://medias24.com/content/api?"
-                    "method=getMasiHistory&periode=10y&format=json")
+            link = (
+                "https://medias24.com/content/api?"
+                "method=getMasiHistory&periode=10y&format=json"
+            )
         else:  # MSI20
-            link = ("https://medias24.com/content/api?"
-                    "method=getIndexHistory&ISIN=msi20&periode=10y"
-                    "&format=json")
+            link = (
+                "https://medias24.com/content/api?"
+                "method=getIndexHistory&ISIN=msi20&periode=10y&format=json"
+            )
 
+    # 2) Requête HTTP
     resp = cloudscraper.create_scraper().get(link)
     if resp.status_code != 200 or not resp.text.strip().startswith('{'):
-        raise ValueError(f"Bad API response for {name}: "
-                         f"{resp.status_code}, body={resp.text[:150]}")
+        raise ValueError(f"Bad API response for {name}: {resp.status_code}")
 
-    # On récupère le JSON et on construit le DataFrame « brut »
+    # 3) Charger le JSON en DataFrame « brut »
     table = json.loads(resp.text.encode().decode(decode))
     df    = pd.DataFrame(table["result"])
 
-    # Brancher le renommage selon le nombre de colonnes
+    # 4) Renommer selon nombre de colonnes
     if name in ["MASI", "MSI20"] and df.shape[1] == 2:
         df.columns = ["Date", "Value"]
     else:
         df.columns = ["Date", "Value", "Min", "Max", "Variation", "Volume"]
 
-    # On remet « Date » en index et on convertit
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    # 5) Conversion de la colonne Date
+    if pd.api.types.is_numeric_dtype(df["Date"]):
+        # MASI renvoie un timestamp en ms
+        df["Date"] = pd.to_datetime(df["Date"], unit="ms", errors="coerce")
+    else:
+        df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+
+    # 6) Indexer et retourner
     return df.set_index("Date")
 
 
