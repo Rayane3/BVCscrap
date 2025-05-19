@@ -20,13 +20,13 @@ setup(
         'pandas',
         'lxml'
     ],
+    package_data={
+        "BVCscrap": ["csv_data/*.csv"],  # include all CSVs
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
     ],
-    package_data={
-    "bvcscrap": ["../data/*.csv"],
-},
 include_package_data=True,
 
 )
