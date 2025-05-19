@@ -98,7 +98,7 @@ def get_data(json_text, decode):
 
     # 3) Rename and parse
     df.columns = ["Date","Value","Min","Max","Variation","Volume"]
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
     df = df.set_index("Date").sort_index()
 
     return df
