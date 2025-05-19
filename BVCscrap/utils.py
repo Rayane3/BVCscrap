@@ -44,11 +44,20 @@ def load_local_history(name):
     if not expected.issubset(df.columns):
         raise ValueError(f"CSV {path} is missing columns: {expected - set(df.columns)}")
 
-    # parse and index by date
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    # 8) Parse dates
+    df['Date'] = pd.to_datetime(
+        df['Date'],
+        dayfirst=True,     # since your CSV uses dd/mm/yyyy
+        errors='coerce'    # unparseable → NaT
+    )
+
+    # 9) Drop any rows where Date could not be parsed
+    df = df[df['Date'].notna()]
+
+    # 10) Now set the index
     df = df.set_index('Date').sort_index()
 
-    # drop the last five days to avoid overlap with the live scrape
+    # 11) Finally drop the last five to avoid overlap
     if len(df) > 5:
         df = df.iloc[:-5]
 
@@ -123,10 +132,25 @@ def get_index(soup,decode):
     return row_data
 
 
-def produce_data(data,start,end):
-    start=pd.to_datetime(start).date()
-    end=pd.to_datetime(end).date()
-    return data.loc[start:end]
+def produce_data(data, start, end):
+    """
+    Safely slice a DataFrame whose index is a DatetimeIndex
+    between start/end; returns empty DF if no overlap.
+    """
+    # 1) Ensure DatetimeIndex
+    if not isinstance(data.index, pd.DatetimeIndex):
+        data.index = pd.to_datetime(data.index, errors="coerce")
+
+    # 2) Sort the index so truncate will work
+    data = data.sort_index()
+
+    # 3) Convert bounds
+    start_ts = pd.to_datetime(start)
+    end_ts   = pd.to_datetime(end)
+
+    # 4) Now truncate without ever KeyError’ing
+    return data.truncate(before=start_ts, after=end_ts)
+
 
 def getTables(soup):
     tabs=['table1',"table6","table7","table4"]
