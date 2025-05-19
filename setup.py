@@ -24,4 +24,9 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
     ],
+    package_data={
+    "bvcscrap": ["../data/*.csv"],
+},
+include_package_data=True,
+
 )

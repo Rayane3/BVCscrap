@@ -1,6 +1,6 @@
 # Store the notation of the website
 def notation(): 
-	return ['Addoha',
+	return [ 'Addoha',
  'AFMA',
  'Afric Indus',
  'Afriquia Gaz',

@@ -1,10 +1,58 @@
 from bs4 import BeautifulSoup
 import requests 
+import os
 import pandas as pd
 import json
 import datetime
 from .Notation import *
 
+def load_local_history(name):
+    """
+    Load your long-term CSV if present, drop its last 5 rows,
+    rename columns to match the scraper output, parse dates, index.
+    """
+    # find the ISIN
+    code = None
+    for rec in notation_code():
+        if rec['name'] == name:
+            code = rec['ISIN']
+            break
+    if not code:
+        return None
+
+    path = os.path.join(os.path.dirname(__file__), 'csv_data', f'{code}.csv')
+    if not os.path.exists(path):
+        return None
+
+    df = pd.read_csv(path)
+    # drop any column that contains 'ouv' (your unwanted column)
+    df = df.drop(columns=[c for c in df.columns if 'ouv.' in c.lower()], errors='ignore')
+
+    # rename your CSV columns to the scraper’s schema
+    df = df.rename(columns={
+    'date':        'Date',
+    'Dernier':     'Value',
+    'Plus Bas':    'Min',
+    ' Plus Haut':   'Max',
+    'Variation %': 'Variation',
+    'Vol.':        'Volume',
+    # ajoute les correspondances inverses si nécessaire
+    })
+
+    # ensure the key columns exist
+    expected = {'Date','Value','Min','Max','Variation','Volume'}
+    if not expected.issubset(df.columns):
+        raise ValueError(f"CSV {path} is missing columns: {expected - set(df.columns)}")
+
+    # parse and index by date
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    df = df.set_index('Date').sort_index()
+
+    # drop the last five days to avoid overlap with the live scrape
+    if len(df) > 5:
+        df = df.iloc[:-5]
+
+    return df
 
 def get_code(name):
     nottation_code=notation_code()
@@ -23,13 +71,37 @@ def get_valeur(name):
 
 # jai aussi remplace largument soup par json_text
 def get_data(json_text, decode):
-    table = json.loads(json_text.encode().decode(decode))
-    row_data=pd.DataFrame(table["result"])
-    row_data.columns=["Date","Value","Min","Max","Variation","Volume"]
-    date=row_data['Date']
-    row_data.drop(['Date'],axis=1,inplace=True)
-    row_data.index=date
-    return row_data
+    """
+    Parse the medias24 JSON into a DataFrame with
+    index=Timestamp and columns [Value, Min, Max, Variation, Volume].
+    If there's no data in table['result'], returns an empty DataFrame
+    with the correct columns and an empty DatetimeIndex.
+    """
+    table   = json.loads(json_text.encode().decode(decode))
+    results = table.get("result", [])
+
+    # 1) If no rows, return an empty DataFrame with the right columns & index
+    if not results:
+        empty_idx = pd.DatetimeIndex([], name="Date")
+        return pd.DataFrame(
+            columns=["Value","Min","Max","Variation","Volume"],
+            index=empty_idx
+        )
+
+    # 2) Otherwise build the DataFrame
+    df = pd.DataFrame(results)
+
+    if df.shape[1] != 6:
+        raise ValueError(
+            f"get_data: expected 6 fields (Date + 5), got {df.shape[1]}"
+        )
+
+    # 3) Rename and parse
+    df.columns = ["Date","Value","Min","Max","Variation","Volume"]
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    df = df.set_index("Date").sort_index()
+
+    return df
 
 def intradata(soup,decode):
     table= json.loads(soup.text.encode().decode(decode))
