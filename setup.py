@@ -5,7 +5,7 @@ with open('README.md') as f:
 
 setup(
     name='BVCscrap',
-    version='0.0.4',
+    version='0.1.0',
     description='Python library to scrape financial data from Casablanca Stock Exchange',
     long_description=long_description,
     long_description_content_type='text/markdown',
